@@ -23,13 +23,12 @@
 #include <math.h>
 #include "omp.h"
 
-#define USE_MULTIPLE_THREADS true
 #define MAXTHREADS 128
 int NumThreads;
 double start;
 
-static const int ROWS = 1000;     // liczba wierszy macierzy
-static const int COLUMNS = 1000;  // lizba kolumn macierzy
+static const int ROWS = 3000;     // liczba wierszy macierzy
+static const int COLUMNS = 3000;  // lizba kolumn macierzy
 
 float matrix_a[ROWS][COLUMNS];    // lewy operand 
 float matrix_b[ROWS][COLUMNS];    // prawy operand
@@ -43,8 +42,8 @@ void initialize_matrices()
 #pragma omp parallel for 
 	for (int i = 0; i < ROWS; i++) {
 		for (int j = 0; j < COLUMNS; j++) {
-			matrix_a[i][j] = (float)rand() / RAND_MAX;
-			matrix_b[i][j] = (float)rand() / RAND_MAX;
+			matrix_a[i][j] = (float) rand() / RAND_MAX;
+			matrix_b[i][j] = (float) rand() / RAND_MAX;
 			matrix_r[i][j] = 0.0;
 		}
 	}
@@ -66,6 +65,28 @@ void print_result()
 	for (int i = 0; i < ROWS; i++) {
 		for (int j = 0; j < COLUMNS; j++) {
 			fprintf(result_file, "%6.4f ", matrix_r[i][j]);
+		}
+		fprintf(result_file, "\n");
+	}
+}
+
+void print_a()
+{
+	// wydruk wyniku
+	for (int i = 0; i < ROWS; i++) {
+		for (int j = 0; j < COLUMNS; j++) {
+			fprintf(result_file, "%6.4f ", matrix_a[i][j]);
+		}
+		fprintf(result_file, "\n");
+	}
+}
+
+void print_b()
+{
+	// wydruk wyniku
+	for (int i = 0; i < ROWS; i++) {
+		for (int j = 0; j < COLUMNS; j++) {
+			fprintf(result_file, "%6.4f ", matrix_b[i][j]);
 		}
 		fprintf(result_file, "\n");
 	}
@@ -119,6 +140,12 @@ int main(int argc, char* argv[])
 {
 	//	 start = (double) clock() / CLK_TCK ;
 
+	bool USE_MULTIPLE_THREADS = false;
+
+	if (argc > 1) {
+		USE_MULTIPLE_THREADS = true;
+	}
+
 	//Determine the number of threads to use
 	if (USE_MULTIPLE_THREADS) {
 		SYSTEM_INFO SysInfo;
@@ -132,21 +159,29 @@ int main(int argc, char* argv[])
 	printf("Klasyczny algorytm mnozenia macierzy, liczba watkow %d \n", NumThreads);
 	printf("liczba watkow  = %d\n\n", NumThreads);
 
-	int r = (int)sqrt((double)2*1024*1024 / sizeof(float) / 3);
-	r = 250;
-	std::cout << r << std::endl;
+	int r = (int)sqrt((double)6*1024*1024 / sizeof(float) / 3);
+	r = ROWS / ceil((float) ROWS / r);
+
+	omp_set_num_threads(NumThreads);
 
 	initialize_matrices();
 	start = (double)clock() / CLK_TCK;
-	multiply_matrices_IJK_IKJ( r );
+	multiply_matrices_IJK_IKJ(r);
 	print_elapsed_time();
+
+	/*result_file = fopen("abc.txt", "w");
+
+	print_a();
+	print_b();
+	print_result();*/
+	
 
 	initialize_matricesZ();
 	start = (double)clock() / CLK_TCK;
 	multiply_matrices_JKI();
 	print_elapsed_time();
 
-	//fclose(result_file);
+	/*fclose(result_file);*/
 	//system("pause");
 	return(0);
 }
